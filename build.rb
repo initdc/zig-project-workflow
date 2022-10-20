@@ -18,10 +18,12 @@ DOCKER_DIR = "docker"
 UPLOAD_DIR = "upload"
 
 def doCleanAll
+    puts "doCleanAll..."
     `rm -rf #{TARGET_DIR} #{UPLOAD_DIR}`
 end
 
 def doClean
+    puts "doClean..."
     `rm -rf #{TARGET_DIR}/#{DOCKER_DIR} #{UPLOAD_DIR}`
 end
 
@@ -168,10 +170,14 @@ end
 
 def notExistsThen(cmd, dest, src)
     if not system "test -f #{dest}"
-        cmd = "#{cmd} #{src} #{dest}"
-        puts cmd
-        IO.popen(cmd) do |r|
-            puts r.readlines
+        if system "test -f #{src}"
+            cmd = "#{cmd} #{src} #{dest}"
+            puts cmd
+            IO.popen(cmd) do |r|
+                puts r.readlines
+            end
+        else
+            puts "!! #{src} not exists"
         end
     end
 end
@@ -201,6 +207,7 @@ GO_ZIG.each do |target_platform, targets|
     if architecture == "arm"
         for variant in ARM
             docker = "#{TARGET_DIR}/#{DOCKER_DIR}/#{os}/#{architecture}/v#{variant}"
+            puts docker
             `mkdir -p #{docker}`
 
             if targets.kind_of?(Array)
@@ -219,11 +226,12 @@ GO_ZIG.each do |target_platform, targets|
         end
     else
         docker = "#{TARGET_DIR}/#{DOCKER_DIR}/#{os}/#{architecture}"
+        puts docker
         `mkdir -p #{docker}`
 
         if targets.kind_of?(Array)
             for target in targets
-                tg_array = target.to_s.split("-")
+                tg_array = target.split("-")
                 abi = tg_array.last
 
                 existsThen "ln", "#{TARGET_DIR}/#{target}/#{RELEASE}/bin/#{PROGRAM}", "#{docker}/#{PROGRAM}-#{abi}"
