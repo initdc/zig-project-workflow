@@ -6,7 +6,7 @@ def zig_test catch_error = false, *opt
     lines = output.split("\n")
     for line in lines
         arg = line.split(" ").first
-        cmd = "#{test_cmd}  #{arg}"
+        cmd = "#{test_cmd} #{arg}"
         puts cmd
         result = system cmd
         if catch_error and !result

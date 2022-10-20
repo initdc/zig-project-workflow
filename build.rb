@@ -192,7 +192,7 @@ for target in targets
     target_bin = !windows ? target : "#{target}.exe"
 
     target_arg = "-Dtarget=#{target}"
-    cmd = "#{BUILD_CMD} #{target_arg} #{OUTPUT_ARG} #{TARGET_DIR}/#{target}/#{RELEASE}"
+    cmd = "#{BUILD_CMD} #{RELEASE_ARG} #{target_arg} #{OUTPUT_ARG} #{TARGET_DIR}/#{target}/#{RELEASE}"
     puts cmd
     system cmd
 
