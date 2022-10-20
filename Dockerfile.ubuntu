@@ -13,7 +13,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 #     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root
-COPY target/$TARGETPLATFORM/* .
+COPY target/docker/$TARGETPLATFORM/* .
 
 CMD ["/bin/sh"]
 
