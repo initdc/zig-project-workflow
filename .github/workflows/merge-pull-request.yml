@@ -1,7 +1,7 @@
 name: Merge or Pull requests
 
 env:
-  GO_VERSION: '1.19'
+  ZIG_VERSION: master
 
 on:
   workflow_dispatch:
@@ -17,14 +17,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Set go version  
-        uses: actions/setup-go@v2
+      - name: Set zig version  
+        uses: korandoru/setup-zig@v1
         with:
-          go-version: '${{ env.GO_VERSION }}'   
+          zig-version: ${{ env.ZIG_VERSION }} 
       - name: Build Artifact
-        run: |
-          ruby build.rb --install-qemu
-          ruby build.rb test --run-test
+        run: ruby build.rb test --run-test
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:

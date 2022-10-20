@@ -5,15 +5,15 @@ require "./version"
 
 REGISTRY = "docker.io"
 DOCKER_USER = "initdc"
-DOCKER_IMAGE = "demo"
-BINARY = "demo"
+DOCKER_IMAGE = "zig-demo"
+BINARY = "zig-demo"
 # VERSION = "v0.0.1"
 LATEST = "scratch"
 # the base of docker `FROM scratch`, if not, set: { false | "" }
 ACTION = "--push"
 # options: { --push | --load | "" }
 
-TARGET_DIR = "target"
+TARGET_DOCKER_DIR = "target/docker"
 
 # docker buildx ls
 # scratch image base
@@ -88,7 +88,7 @@ version = ARGV[0] || VERSION
 bin_exist = {}
 
 for target_platform in BUILDER_SUPPORT
-    if system("test -f #{TARGET_DIR}/#{target_platform}/#{BINARY}")
+    if system("test -f #{TARGET_DOCKER_DIR}/#{target_platform}/#{BINARY}")
         bin_exist.store target_platform, true
     else
         bin_exist.store target_platform, false

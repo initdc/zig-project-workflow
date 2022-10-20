@@ -1,203 +1,251 @@
 require "./version"
 require "./get-version"
+require "./zig-test"
 
-PROGRAM = "demo"
+PROGRAM = "zig-demo"
 # VERSION = "v0.0.1"
-BUILD_CMD = "go build -o"
+BUILD_CMD = "zig build"
+OUTPUT_ARG = "-p"
+RELEASE_BUILD = true
+RELEASE_ARG = RELEASE_BUILD == true ? "-Drelease" : ""
+RELEASE = RELEASE_BUILD == true ? "release" : "debug"
 # used in this way:
-# ENV BUILD_CMD OUTPUT_PATH
-TEST_CMD = "go test"
+# BUILD_CMD RELEASE_ARG TARGET_ARG OUTPUT_ARG OUTPUT_PATH
+TEST_CMD = "zig build"
 
 TARGET_DIR = "target"
+DOCKER_DIR = "docker"
 UPLOAD_DIR = "upload"
 
-def clean
+def doCleanAll
     `rm -rf #{TARGET_DIR} #{UPLOAD_DIR}`
 end
 
+def doClean
+    `rm -rf #{TARGET_DIR}/#{DOCKER_DIR} #{UPLOAD_DIR}`
+end
+
 # go tool dist list
-OS_ARCH = [
-    "aix/ppc64",
-    "android/386",
-    "android/amd64",
-    "android/arm",
-    "android/arm64",
-    "darwin/amd64",
-    "darwin/arm64",
-    "dragonfly/amd64",
-    "freebsd/386",
-    "freebsd/amd64",
-    "freebsd/arm",
-    "freebsd/arm64",
-    "illumos/amd64",
-    "ios/amd64",
-    "ios/arm64",
-    "js/wasm",
-    "linux/386",
-    "linux/amd64",
-    "linux/arm",
-    "linux/arm64",
-    "linux/mips",
-    "linux/mips64",
-    "linux/mips64le",
-    "linux/mipsle",
-    "linux/ppc64",
-    "linux/ppc64le",
-    "linux/riscv64",
-    "linux/s390x",
-    "netbsd/386",
-    "netbsd/amd64",
-    "netbsd/arm",
-    "netbsd/arm64",
-    "openbsd/386",
-    "openbsd/amd64",
-    "openbsd/arm",
-    "openbsd/arm64",
-    "openbsd/mips64",
-    "plan9/386",
-    "plan9/amd64",
-    "plan9/arm",
-    "solaris/amd64",
-    "windows/386",
-    "windows/amd64",
-    "windows/arm",
-    "windows/arm64"
-]
+# linux only for docker
+GO_ZIG = {
+    "linux/386": ["i386-linux-gnu", "i386-linux-musl"],
+    "linux/amd64": ["x86_64-linux-gnu", "x86_64-linux-musl"],
+    "linux/arm": ["arm-linux-gnueabi", "arm-linux-gnueabihf", "arm-linux-musleabi", "arm-linux-musleabihf"],
+    "linux/arm64": ["aarch64-linux-gnu", "aarch64-linux-musl"],
+    "linux/mips": ["mips-linux-gnueabi", "mips-linux-gnueabihf", "mips-linux-musl"],
+    "linux/mips64": ["mips64-linux-gnuabi64", "mips64-linux-gnuabin32", "mips64-linux-musl"],
+    "linux/mips64le": ["mips64el-linux-gnuabi64", "mips64el-linux-gnuabin32", "mips64el-linux-musl"],
+    "linux/mipsle": ["mipsel-linux-gnueabi", "mipsel-linux-gnueabihf", "mipsel-linux-musl"],
+    "linux/ppc64": ["powerpc64-linux-gnu", "powerpc64-linux-musl"],
+    "linux/ppc64le": ["powerpc64-linux-gnu", "powerpc64-linux-musl"],
+    "linux/riscv64": ["riscv64-linux-gnu", "riscv64-linux-musl"],
+    "linux/s390x": ["s390x-linux-gnu", "s390x-linux-musl"],
+}
 
 ARM = ["5", "6", "7"]
 
-TEST_OS_ARCH = [
-    "darwin/amd64",
-    "darwin/arm64",
-    "linux/386",
-    "linux/amd64",
-    "linux/arm",
-    "linux/arm64",
-    "linux/riscv64",
-    "windows/386",
-    "windows/amd64",
-    "windows/arm64"
+# zig targets | jq -r .libc
+TARGETS = [
+    "aarch64_be-linux-gnu",
+    "aarch64_be-linux-musl",
+    "aarch64_be-windows-gnu",
+    "aarch64-linux-gnu",
+    "aarch64-linux-musl",
+    "aarch64-windows-gnu",
+    "aarch64-macos-none",
+    "armeb-linux-gnueabi",
+    "armeb-linux-gnueabihf",
+    "armeb-linux-musleabi",
+    "armeb-linux-musleabihf",
+    "armeb-windows-gnu",
+    "arm-linux-gnueabi",
+    "arm-linux-gnueabihf",
+    "arm-linux-musleabi",
+    "arm-linux-musleabihf",
+    "thumb-linux-gnueabi",
+    "thumb-linux-gnueabihf",
+    "thumb-linux-musleabi",
+    "thumb-linux-musleabihf",
+    "arm-windows-gnu",
+    "csky-linux-gnueabi",
+    "csky-linux-gnueabihf",
+    "i386-linux-gnu",
+    "i386-linux-musl",
+    "i386-windows-gnu",
+    "m68k-linux-gnu",
+    "m68k-linux-musl",
+    "mips64el-linux-gnuabi64",
+    "mips64el-linux-gnuabin32",
+    "mips64el-linux-musl",
+    "mips64-linux-gnuabi64",
+    "mips64-linux-gnuabin32",
+    "mips64-linux-musl",
+    "mipsel-linux-gnueabi",
+    "mipsel-linux-gnueabihf",
+    "mipsel-linux-musl",
+    "mips-linux-gnueabi",
+    "mips-linux-gnueabihf",
+    "mips-linux-musl",
+    "powerpc64le-linux-gnu",
+    "powerpc64le-linux-musl",
+    "powerpc64-linux-gnu",
+    "powerpc64-linux-musl",
+    "powerpc-linux-gnueabi",
+    "powerpc-linux-gnueabihf",
+    "powerpc-linux-musl",
+    "riscv64-linux-gnu",
+    "riscv64-linux-musl",
+    "s390x-linux-gnu",
+    "s390x-linux-musl",
+    "sparc-linux-gnu",
+    "sparc64-linux-gnu",
+    "wasm32-freestanding-musl",
+    "wasm32-wasi-musl",
+    "x86_64-linux-gnu",
+    "x86_64-linux-gnux32",
+    "x86_64-linux-musl",
+    "x86_64-windows-gnu",
+    "x86_64-macos-none",
 ]
 
-LESS_OS_ARCH = [
-    "linux/amd64",
-    "linux/arm64"
+TEST_TARGETS = [
+    "aarch64-linux-gnu",
+    "aarch64-linux-musl",
+    "aarch64-windows-gnu",
+    "aarch64-macos-none",
+    "arm-linux-gnueabi",
+    "arm-linux-gnueabihf",
+    "arm-linux-musleabi",
+    "arm-linux-musleabihf",
+    "x86_64-linux-gnu",
+    "x86_64-linux-gnux32",
+    "x86_64-linux-musl",
+    "x86_64-windows-gnu",
+    "x86_64-macos-none",
 ]
 
-QEMU_BINFMT = [
-    "qemu-user",
+LESS_TARGETS = [
+    "aarch64-linux-gnu",
+    "aarch64-linux-musl",
+    "x86_64-linux-gnu",
+    "x86_64-linux-musl",
 ]
-
-ARCH_EXEC = {
-    "386": "",
-    "amd64": "",
-    "arm": "qemu-arm",
-    "arm64": "qemu-aarch64",
-    "mips": "qemu-mips",
-    "mips64": "qemu-mips64",
-    "mips64le": "qemu-mips64el",
-    "mipsle": "qemu-mipsel",
-    "ppc64": "qemu-ppc64",
-    "ppc64le": "qemu-ppc64le",
-    "riscv64": "qemu-riscv64",
-    "s390x": "qemu-s390x"
-}
-
-def run_install
-    cmd = "sudo apt-get install -y #{QEMU_BINFMT.join(" ")}"
-    puts cmd
-    IO.popen(cmd) do |r|
-        puts r.readlines
-    end
-end
 
 version = get_version ARGV, 0, VERSION
 
 test_bin = ARGV[0] == "test" || false
 less_bin = ARGV[0] == "less" || false
 
-run_test = ARGV.include? "--run-test" || false 
+clean_all = ARGV.include? "--clean-all" || false
+clean = ARGV.include? "--clean" || false
+run_test = ARGV.include? "--run-test" || false
 catch_error = ARGV.include? "--catch-error" || false
-install_qemu = ARGV.include? "--install-qemu" || false
 
-if install_qemu
-    run_install
-    return
+targets = TARGETS
+targets = TEST_TARGETS if test_bin
+targets = LESS_TARGETS if less_bin
+
+if run_test
+    zig_test catch_error
 end
 
-os_arch = OS_ARCH
-os_arch = TEST_OS_ARCH if test_bin
-os_arch = LESS_OS_ARCH if less_bin
-
-# on local machine, you may re-run this script
-if test_bin || less_bin
-    clean
+if clean_all
+    doCleanAll
+elsif clean
+    doClean
+    # on local machine, you may re-run this script
+elsif test_bin || less_bin
+    doClean
 end
 `mkdir -p #{TARGET_DIR} #{UPLOAD_DIR}`
+`mkdir -p #{TARGET_DIR}/#{DOCKER_DIR}`
 
-for target_platform in os_arch do
-    tp_array = target_platform.split('/')
+def existsThen(cmd, src, dest)
+    if system "test -f #{src}"
+        `#{cmd} #{src} #{dest}`
+    end
+end
+
+def notExistsThen(cmd, dest, src)
+    if not system "test -f #{dest}"
+        cmd = "#{cmd} #{src} #{dest}"
+        puts cmd
+        IO.popen(cmd) do |r|
+            puts r.readlines
+        end
+    end
+end
+
+for target in targets
+    tp_array = target.split("-")
+    architecture = tp_array[0]
+    os = tp_array[1]
+    windows = os == "windows"
+    
+    program_bin = !windows ? PROGRAM : "#{PROGRAM}.exe"
+    target_bin = !windows ? target : "#{target}.exe"
+
+    target_arg = "-Dtarget=#{target}"
+    cmd = "#{BUILD_CMD} #{target_arg} #{OUTPUT_ARG} #{TARGET_DIR}/#{target}/#{RELEASE}"
+    puts cmd
+    system cmd
+
+    existsThen "ln", "#{TARGET_DIR}/#{target}/#{RELEASE}/bin/#{program_bin}", "#{UPLOAD_DIR}/#{target_bin}"
+end
+
+GO_ZIG.each do |target_platform, targets|
+    tp_array = target_platform.to_s.split("/")
     os = tp_array[0]
     architecture = tp_array[1]
 
-    program_bin = os != "windows" ? PROGRAM : "#{PROGRAM}.exe"
+    if architecture == "arm"
+        for variant in ARM
+            docker = "#{TARGET_DIR}/#{DOCKER_DIR}/#{os}/#{architecture}/v#{variant}"
+            `mkdir -p #{docker}`
 
-    if architecture == "arm" 
-        for variant in ARM do
-            puts "GOOS=#{os} GOARCH=#{architecture} GOARM=#{variant}"
+            if targets.kind_of?(Array)
+                for target in targets
+                    tg_array = target.split("-")
+                    abi = tg_array.last
 
-            if run_test and os == "linux"
-                qemu_runner = ARCH_EXEC[:"#{architecture}"]
-                exec_arg = qemu_runner != "" ? "--exec #{qemu_runner}" : ""
-
-                test_cmd = "GOOS=#{os} GOARCH=#{architecture} GOARM=#{variant} #{TEST_CMD} #{exec_arg}"
-                puts test_cmd
-                test_result = system test_cmd
-                if catch_error and !test_result
-                    return
+                    existsThen "ln", "#{TARGET_DIR}/#{target}/#{RELEASE}/bin/#{PROGRAM}", "#{docker}/#{PROGRAM}-#{abi}"
+                    Dir.chdir docker do
+                        notExistsThen "ln -s", PROGRAM, "#{PROGRAM}-#{abi}"
+                    end
                 end
-            elsif run_test
-                puts "skip testing for #{os}/#{architecture}/v#{variant}"
+            else
+                existsThen "ln", "#{TARGET_DIR}/#{target}/#{RELEASE}/bin/#{PROGRAM}", "#{docker}/#{PROGRAM}"
             end
-
-            upload_bin = os != "windows" ? "#{PROGRAM}-#{version}-#{os}-#{architecture}-#{variant}" : "#{PROGRAM}-#{version}-#{os}-#{architecture}-#{variant}.exe"
-
-            `GOOS=#{os} GOARCH=#{architecture} GOARM=#{variant} #{BUILD_CMD} #{TARGET_DIR}/#{os}/#{architecture}/v#{variant}/#{program_bin}`
-            `ln #{TARGET_DIR}/#{os}/#{architecture}/v#{variant}/#{program_bin} #{UPLOAD_DIR}/#{upload_bin}`
         end
     else
-        puts "GOOS=#{os} GOARCH=#{architecture}"
+        docker = "#{TARGET_DIR}/#{DOCKER_DIR}/#{os}/#{architecture}"
+        `mkdir -p #{docker}`
 
-        if run_test and os == "linux"
-            qemu_runner = ARCH_EXEC[:"#{architecture}"]
-            exec_arg = qemu_runner != "" ? "--exec #{qemu_runner}" : ""
+        if targets.kind_of?(Array)
+            for target in targets
+                tg_array = target.to_s.split("-")
+                abi = tg_array.last
 
-            test_cmd = "GOOS=#{os} GOARCH=#{architecture} #{TEST_CMD} #{exec_arg}"
-            puts test_cmd
-            test_result = system test_cmd
-            if catch_error and !test_result
-                return
+                existsThen "ln", "#{TARGET_DIR}/#{target}/#{RELEASE}/bin/#{PROGRAM}", "#{docker}/#{PROGRAM}-#{abi}"
+                Dir.chdir docker do
+                    notExistsThen "ln -s", PROGRAM, "#{PROGRAM}-#{abi}"
+                end
             end
-        elsif run_test
-            puts "skip testing for #{os}/#{architecture}"        
+        else
+            existsThen "ln", "#{TARGET_DIR}/#{target}/#{RELEASE}/bin/#{PROGRAM}", "#{docker}/#{PROGRAM}"
         end
-
-        upload_bin = os != "windows" ? "#{PROGRAM}-#{version}-#{os}-#{architecture}" : "#{PROGRAM}-#{version}-#{os}-#{architecture}.exe"
-
-        `GOOS=#{os} GOARCH=#{architecture} #{BUILD_CMD} #{TARGET_DIR}/#{os}/#{architecture}/#{program_bin}`
-        `ln #{TARGET_DIR}/#{os}/#{architecture}/#{program_bin} #{UPLOAD_DIR}/#{upload_bin}`
     end
 end
 
 # cmd = "file #{UPLOAD_DIR}/**"
 # IO.popen(cmd) do |r|
-#     puts r.readlines
+#         puts r.readlines
 # end
 
 file = "#{UPLOAD_DIR}/BINARYS"
 IO.write(file, "")
 
-cmd = "tree #{TARGET_DIR}"
+cmd = "tree #{TARGET_DIR}/#{DOCKER_DIR}"
 IO.popen(cmd) do |r|
     rd = r.readlines
     puts rd
@@ -216,7 +264,7 @@ Dir.chdir UPLOAD_DIR do
         rd = r.readlines
 
         for o in rd
-            if ! o.include? "SHA256SUM" and ! o.include? "BINARYS"
+            if !o.include? "SHA256SUM" and !o.include? "BINARYS"
                 print o
                 IO.write(file, o, mode: "a")
             end
@@ -227,5 +275,5 @@ end
 # `docker buildx build --platform linux/amd64 -t demo:amd64 . --load`
 # cmd = "docker run demo:amd64"
 # IO.popen(cmd) do |r|
-#     puts r.readlines
+#         puts r.readlines
 # end

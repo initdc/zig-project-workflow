@@ -1,12 +1,12 @@
-# [Golang Project Workflow](https://github.com/initdc/golang-project-workflow)
+# [Zig Project Workflow](https://github.com/initdc/zig-project-workflow)
 
-> Project written by go, you just need build once time.
+> Project written by zig, you just need build once time.
 
 ## Build on Linux Host
 
 1. deps 
 
-    - go
+    - zig
     - ruby
     - tree
     - sha256sum
@@ -19,9 +19,8 @@
     ```
     # build binarys
     ruby build.rb
-    ruby build.rb --install-qemu ## if you want run cross-arch testing
     ruby build.rb --run-test
-    ruby build.rb v0.0.2 
+    ruby build.rb v0.0.1
     ruby build.rb less ## build bin for LESS_OS_ARCH
 
     echo > version.rb 'VERSION = "fix-bug-001"'
@@ -29,7 +28,7 @@
     
     # build docker images
     ruby docker-tag.rb
-    ruby docker-tag.rb v0.0.2
+    ruby docker-tag.rb v0.0.1
     ruby docker-tag.rb dev
     ruby docker-tag.rb v$(TZ=Asia/Shanghai date +%Y.%m.%d)
     ```
