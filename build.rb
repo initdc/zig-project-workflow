@@ -39,7 +39,7 @@ GO_ZIG = {
     "linux/mips64le": ["mips64el-linux-gnuabi64", "mips64el-linux-gnuabin32", "mips64el-linux-musl"],
     "linux/mipsle": ["mipsel-linux-gnueabi", "mipsel-linux-gnueabihf", "mipsel-linux-musl"],
     "linux/ppc64": ["powerpc64-linux-gnu", "powerpc64-linux-musl"],
-    "linux/ppc64le": ["powerpc64-linux-gnu", "powerpc64-linux-musl"],
+    "linux/ppc64le": ["powerpc64le-linux-gnu", "powerpc64le-linux-musl"],
     "linux/riscv64": ["riscv64-linux-gnu", "riscv64-linux-musl"],
     "linux/s390x": ["s390x-linux-gnu", "s390x-linux-musl"],
 }
