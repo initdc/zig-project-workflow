@@ -1,5 +1,6 @@
 require "./version"
 require "./get-version"
+require "./get-zig-targets"
 require "./zig-test"
 
 PROGRAM = "zig-demo"
@@ -143,7 +144,7 @@ clean = ARGV.include? "--clean" || false
 run_test = ARGV.include? "--run-test" || false
 catch_error = ARGV.include? "--catch-error" || false
 
-targets = TARGETS
+targets = get_zig_targets || TARGETS
 targets = TEST_TARGETS if test_bin
 targets = LESS_TARGETS if less_bin
 
