@@ -222,6 +222,7 @@ GO_ZIG.each do |target_platform, targets|
                     end
                 end
             else
+                target = targets
                 existsThen "ln", "#{TARGET_DIR}/#{target}/#{RELEASE}/bin/#{PROGRAM}", "#{docker}/#{PROGRAM}"
             end
         end
@@ -241,6 +242,7 @@ GO_ZIG.each do |target_platform, targets|
                 end
             end
         else
+            target = targets
             existsThen "ln", "#{TARGET_DIR}/#{target}/#{RELEASE}/bin/#{PROGRAM}", "#{docker}/#{PROGRAM}"
         end
     end
